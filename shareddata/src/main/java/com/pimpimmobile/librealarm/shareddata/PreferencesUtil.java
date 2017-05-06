@@ -2,7 +2,6 @@ package com.pimpimmobile.librealarm.shareddata;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import com.google.gson.JsonObject;
 
@@ -107,6 +106,10 @@ public class PreferencesUtil {
 
     public static Boolean uninstallxDrip(Context context) {
         return getBoolean(context, context.getString(R.string.pref_key_uninstall_xdrip), false);
+    }
+
+    public static Boolean automaticallyEnableTheatreMode(Context context) {
+        return getBoolean(context, context.getString(R.string.pref_key_auto_theatre_mode), false);
     }
 
     public static String getCheckGlucoseInterval(Context context) {

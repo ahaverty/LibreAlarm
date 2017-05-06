@@ -186,5 +186,7 @@
     <string name="remove_the_xdrip_watchface_from_the_collector_watch">Remove the xDrip watchface from the collector watch</string>
     <string name="toggle_nfc">Toggle NFC</string>
     <string name="try_to_turn_nfc_off_when_not_in_use">Try to turn NFC off when not in use</string>
+    <string name="auto_theatre_mode_preference_summary">Automatically enter theatre mode after every reading</string>
+    <string name="auto_theatre_mode_preference_title">Always-On Theatre Mode</string>
 
 </resources>

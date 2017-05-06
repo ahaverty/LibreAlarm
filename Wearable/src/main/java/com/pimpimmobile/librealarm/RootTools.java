@@ -192,6 +192,12 @@ class RootTools {
                         final Process execute2 = Runtime.getRuntime().exec("su -c sh " + mContext.getFilesDir() + "/powersave.sh");
                         if (DEBUG) showProcessOutput(execute2);
                     }
+
+                    if (PreferencesUtil.automaticallyEnableTheatreMode(mContext)) {
+                        if (DEBUG) Log.d(TAG, "Enabling theatre mode");
+                        final Process executeTheatreMode = Runtime.getRuntime().exec("su -c settings put global theatre_mode_on 1");
+                        if (DEBUG) showProcessOutput(executeTheatreMode);
+                    }
                 }
             }
 

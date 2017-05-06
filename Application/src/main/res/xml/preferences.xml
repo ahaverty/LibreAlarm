@@ -48,6 +48,12 @@
             android:title="@string/pref_key_root_title"
             android:summary="@string/pref_key_root_summary"
             android:defaultValue="false" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="@string/pref_key_root"
+            android:key="@string/pref_key_auto_theatre_mode"
+            android:summary="@string/auto_theatre_mode_preference_summary"
+            android:title="@string/auto_theatre_mode_preference_title" />
         <CheckBoxPreference
             android:key="@string/pref_key_switch_nfc"
             android:title="@string/toggle_nfc"

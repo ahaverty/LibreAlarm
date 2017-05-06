@@ -1,19 +1,21 @@
 package com.pimpimmobile.librealarm;
 
 import android.app.IntentService;
-import android.content.Intent;
 import android.content.Context;
+import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Wearable;
 import com.pimpimmobile.librealarm.shareddata.PreferencesUtil;
-import com.pimpimmobile.librealarm.shareddata.Status;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -22,181 +24,90 @@ import com.pimpimmobile.librealarm.shareddata.Status;
  * TODO: Customize class - update intent actions, extra parameters and static
  * helper methods.
  */
-public class WearIntentService extends IntentService implements GoogleApiClient.ConnectionCallbacks {
+public class WearIntentService extends IntentService {
 
     private static final String TAG = "LibreIntent";
 
-    // TODO: Rename actions, choose action names that describe tasks that this
-    // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
-    private static final String ACTION_FOO = "com.pimpimmobile.librealarm.action.FOO";
-    private static final String ACTION_BAZ = "com.pimpimmobile.librealarm.action.BAZ";
-
-    // TODO: Rename parameters
-    private static final String EXTRA_PARAM1 = "com.pimpimmobile.librealarm.extra.PARAM1";
-    private static final String EXTRA_PARAM2 = "com.pimpimmobile.librealarm.extra.PARAM2";
-
     public static GoogleApiClient mGoogleApiClient;
     private static MessageApi.MessageListener remoteListener;
+    private PowerManager.WakeLock mWakeLock;
 
     public WearIntentService() {
         super("WearIntentService");
     }
 
-    /**
-     * Starts this service to perform action Foo with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionFoo(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, WearIntentService.class);
-        intent.setAction(ACTION_FOO);
-        intent.putExtra(EXTRA_PARAM1, param1);
-        intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
-
-    public static void startActionDefault(Context context) {
-        Intent intent = new Intent(context, WearIntentService.class);
-        context.startService(intent);
-    }
-
-    /**
-     * Starts this service to perform action Baz with the given parameters. If
-     * the service is already performing a task this action will be queued.
-     *
-     * @see IntentService
-     */
-    // TODO: Customize helper method
-    public static void startActionBaz(Context context, String param1, String param2) {
-        Intent intent = new Intent(context, WearIntentService.class);
-        intent.setAction(ACTION_BAZ);
-        intent.putExtra(EXTRA_PARAM1, param1);
-        intent.putExtra(EXTRA_PARAM2, param2);
-        context.startService(intent);
-    }
-
     @Override
-    protected void onHandleIntent(Intent intent) {
-        final PowerManager.WakeLock wl = JoH.getWakeLock(this, "intent-service", 30000);
-        Log.e(TAG, "IntentService Triggered!");
-        try {
-            if (intent != null) {
-                final String action = intent.getAction();
-                if (ACTION_FOO.equals(action)) {
-                    final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                    final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                    handleActionFoo(param1, param2);
-                } else if (ACTION_BAZ.equals(action)) {
-                    final String param1 = intent.getStringExtra(EXTRA_PARAM1);
-                    final String param2 = intent.getStringExtra(EXTRA_PARAM2);
-                    handleActionBaz(param1, param2);
-                }
-            }
+    public void onCreate() {
+        super.onCreate();
 
+        mWakeLock = JoH.getWakeLock(this, "intent-service", 30000);
 
-            if (libreAlarm.noNFC()) {
-                Log.e(TAG, "Device has no NFC! - not doing anything");
-            } else {
+        final NfcManager nfcManager =
+                (NfcManager) this.getSystemService(Context.NFC_SERVICE);
+        final NfcAdapter nfcAdapter = nfcManager.getDefaultAdapter();
 
-                reconnectGoogle();
-
-                if (PreferencesUtil.shouldUseRoot(this)) {
-                    Log.d(TAG, "Using ROOT options!");
-                    RootTools.executeScripts(true); // turn it on
-                } else {
-                    Log.d(TAG, "Not using root options");
-                }
-                final NfcManager nfcManager =
-                        (NfcManager) this.getSystemService(Context.NFC_SERVICE);
-                NfcAdapter mNfcAdapter = nfcManager.getDefaultAdapter(); // could be static?
-                // mNfcAdapter.disableForegroundDispatch(this);
-                if (mNfcAdapter != null) {
-                    Log.d(TAG, "Got NFC adpater - intent service");
-                    int counter = 0;
-                    try {
-                        // null pointer can trigger here from the systemapi
-                        while (((!mNfcAdapter.isEnabled() || (!mGoogleApiClient.isConnected())) && counter < 9)) {
-                            Log.d(TAG, "intent service nfc turned on (" + mNfcAdapter.isEnabled() + ") wait: " + counter + " google: " + mGoogleApiClient.isConnected());
-                            try {
-                                // quick and very dirty
-                                Thread.sleep(1000);
-                            } catch (Exception e) {
-                                //
-                            }
-                            counter++;
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Wearable.API)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle bundle) {
+                        if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+                            final Intent i = new Intent(WearIntentService.this, WearActivity.class);
+                            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(i);
+                        } else {
+                            Log.wtf(TAG, "NFC adapter was null or not enabled");
+                            Toast.makeText(WearIntentService.this, "NFC Error", Toast.LENGTH_SHORT).show();
                         }
-
-                    } catch (NullPointerException e) {
-                        Log.wtf(TAG, "Null pointer exception from NFC subsystem: " + e.toString());
-                        // TODO do we actually need to reboot watch here after some counter of failures without resolution?
                     }
-                } else {
-                    Log.e(TAG, "nfcAdapter is NULL!!");
-                }
 
-                // fire up the activity
-                final Intent i = new Intent(this, WearActivity.class);
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(i);
-            }
-        } finally {
-            JoH.releaseWakeLock(wl);
-        }
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                        Toast.makeText(WearIntentService.this, "Google API suspended", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(ConnectionResult connectionResult) {
+                        Log.e(TAG, "Google Api failed to connect");
+                        Toast.makeText(WearIntentService.this, "Google API failed to connect.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .build();
+
+        mGoogleApiClient.connect();
     }
 
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionFoo(String param1, String param2) {
-        // TODO: Handle action Foo
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    /**
-     * Handle action Baz in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionBaz(String param1, String param2) {
-        // TODO: Handle action Baz
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    private void reconnectGoogle() {
-        Log.d(TAG, "Reconnect google called");
-        if ((mGoogleApiClient == null) || (!mGoogleApiClient.isConnected())) {
-            Log.d(TAG, "Attempting to connect to google api");
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(Wearable.API)
-                    .addConnectionCallbacks(this)
-                 //   .addOnConnectionFailedListener(this)
-                    .build();
-
-            mGoogleApiClient.connect();
-
+    @Override
+    public void onStart(@Nullable Intent intent, int startId) {
+        super.onStart(intent, startId);
+        if (PreferencesUtil.shouldUseRoot(this)) {
+            Log.d(TAG, "Using ROOT options");
+            RootTools.executeScripts(true); // turn it on
         } else {
-            Log.d(TAG, "Already connected google api");
-            onConnected(null);
+            Log.d(TAG, "Not using root options");
+        }
+
+        if (mGoogleApiClient != null && !mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.connect();
         }
     }
 
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        Log.i(TAG, "google api is connected!! - not adding listener yet or sending status update!?");
-        //Wearable.MessageApi.addListener(mGoogleApiClient, this);
-        //sendStatusUpdate(Status.Type.ATTEMPTING);
+    public static void newInstance(Context context) {
+        Intent intent = new Intent(context, WearIntentService.class);
+        context.startService(intent);
     }
 
     @Override
-    public void onConnectionSuspended(int cause) {
-        Log.d(TAG, "onConnectionSuspended(): Connection to Google API client was suspended");
+    public void onDestroy() {
+        super.onDestroy();
+        if (mWakeLock != null) {
+            JoH.releaseWakeLock(mWakeLock);
+        }
     }
 
     public synchronized static void tryToAddListener(MessageApi.MessageListener listener) {
-        // TODO check nulls
-        if (mGoogleApiClient.isConnected()) {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             removeExistingListener();
             Log.d(TAG, "Adding remote listener!");
             Wearable.MessageApi.addListener(mGoogleApiClient, listener);
@@ -206,8 +117,7 @@ public class WearIntentService extends IntentService implements GoogleApiClient.
     }
 
     public synchronized static void tryToRemoveListener(MessageApi.MessageListener listener) {
-        // TODO check nulls
-        if (mGoogleApiClient.isConnected()) {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             removeExistingListener();
             Wearable.MessageApi.removeListener(mGoogleApiClient, listener);
         }
@@ -220,5 +130,4 @@ public class WearIntentService extends IntentService implements GoogleApiClient.
             remoteListener = null;
         }
     }
-
 }
