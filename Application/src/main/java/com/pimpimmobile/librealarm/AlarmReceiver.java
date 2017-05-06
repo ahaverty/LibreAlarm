@@ -37,7 +37,7 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
     }
 
     public synchronized static void post(Context context) {
-        final long previous = PreferenceManager.getDefaultSharedPreferences(context).getLong("next_check", 0);
+        final long previous = PreferenceManager.getDefaultSharedPreferences(context).getLong("pref_next_check_in_millis", 0);
         Log.d(TAG, "Previously check was scheduled for: " + JoH.dateTimeText(previous));
         final long period = Integer.valueOf(PreferencesUtil.getCheckGlucoseInterval(context)) * 60000;
         final long till = JoH.msTill(previous);
@@ -57,7 +57,7 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
 
         JoH.wakeUpIntent(context, delay, intent);
         PreferenceManager.getDefaultSharedPreferences(context).edit()
-                .putLong("next_check", System.currentTimeMillis() + delay).apply();
+                .putLong("pref_next_check_in_millis", System.currentTimeMillis() + delay).apply();
     }
 
     public static void start(Context context) {
@@ -85,6 +85,6 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP);
 
-        PreferenceManager.getDefaultSharedPreferences(context).edit().putLong("next_check", -1).apply();
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putLong("pref_next_check_in_millis", -1).apply();
     }
 }

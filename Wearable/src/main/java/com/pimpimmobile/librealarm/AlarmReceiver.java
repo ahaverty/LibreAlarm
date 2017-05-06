@@ -62,7 +62,7 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
                     SystemClock.elapsedRealtime() + delay, intent);
         }
         PreferenceManager.getDefaultSharedPreferences(context).edit()
-                .putLong("next_check", System.currentTimeMillis() + delay).apply();
+                .putLong("pref_next_check_in_millis", System.currentTimeMillis() + delay).apply();
     }
 
     public static void start(Context context) {
@@ -74,7 +74,7 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
     }
 
     public static long getNextCheck(Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context).getLong("next_check", 0);
+        return PreferenceManager.getDefaultSharedPreferences(context).getLong("pref_next_check_in_millis", 0);
     }
 
     private static PendingIntent getAlarmReceiverIntent(Context context) {
@@ -92,6 +92,6 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP);
 
-        PreferenceManager.getDefaultSharedPreferences(context).edit().putLong("next_check", -1).apply();
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putLong("pref_next_check_in_millis", -1).apply();
     }
 }
