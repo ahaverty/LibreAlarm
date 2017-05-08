@@ -1,8 +1,8 @@
 package com.pimpimmobile.librealarm;
 
 import android.app.IntentService;
-import android.content.Context;
 import android.content.Intent;
+import android.content.Context;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
 import android.os.Bundle;
@@ -13,6 +13,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Wearable;
 import com.pimpimmobile.librealarm.shareddata.PreferencesUtil;
+import com.pimpimmobile.librealarm.shareddata.Status;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -195,7 +196,7 @@ public class WearIntentService extends IntentService implements GoogleApiClient.
 
     public synchronized static void tryToAddListener(MessageApi.MessageListener listener) {
         // TODO check nulls
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+        if (mGoogleApiClient.isConnected()) {
             removeExistingListener();
             Log.d(TAG, "Adding remote listener!");
             Wearable.MessageApi.addListener(mGoogleApiClient, listener);
@@ -205,15 +206,24 @@ public class WearIntentService extends IntentService implements GoogleApiClient.
     }
 
     public synchronized static void tryToRemoveListener(MessageApi.MessageListener listener) {
-        // TODO check nulls
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            removeExistingListener();
-            Wearable.MessageApi.removeListener(mGoogleApiClient, listener);
+        // TODO check nulls - check if we should remove even if not connected
+        //  if (mGoogleApiClient.isConnected()) {
+        if (mGoogleApiClient != null) {
+            try {
+                removeExistingListener();
+            } catch (Exception e) {
+                Log.e(TAG, "Got exception removing remote listener: " + e);
+            }
+            try {
+                Wearable.MessageApi.removeListener(mGoogleApiClient, listener);
+            } catch (Exception e) {
+                Log.e(TAG, "Got exception removing listener: " + e);
+            }
         }
     }
 
     private static void removeExistingListener() {
-        if (remoteListener != null && mGoogleApiClient != null) {
+        if (remoteListener != null) {
             Log.e(TAG, "First removing remote listener!");
             Wearable.MessageApi.removeListener(mGoogleApiClient, remoteListener);
             remoteListener = null;
