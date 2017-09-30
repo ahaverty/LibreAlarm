@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'io.fabric.tools:gradle:1.+'
+        classpath 'io.fabric.tools:gradle:1.21.6'
     }
 }
 
@@ -15,31 +15,28 @@ repositories {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    compileSdkVersion 26
+    buildToolsVersion '25.0.2'
     useLibrary 'org.apache.http.legacy'
-
     defaultConfig {
         minSdkVersion 18
-        targetSdkVersion 22
-        versionCode=5
-        versionName="1.0.4"
+        targetSdkVersion 26
+        versionCode=6
+        versionName="1.1.0"
         applicationId = "com.pimpimmobile.librealarm"
     }
-
     lintOptions {
         disable 'MissingTranslation'
         disable 'ExtraTranslation'
     }
-
 }
 
 dependencies {
-    compile 'com.android.support:recyclerview-v7:23.3.0'
-    compile 'com.google.android.gms:play-services-wearable:7.8.0'
+    compile 'com.android.support:recyclerview-v7:26.1.0'
+    compile 'com.google.android.gms:play-services-wearable:11.0.4'
     compile project(':shareddata')
     wearApp project(':Wearable')
-    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile 'com.android.support:appcompat-v7:26.1.0'
     compile('com.crashlytics.sdk.android:crashlytics:2.6.6@aar') {
         transitive = true;
     }

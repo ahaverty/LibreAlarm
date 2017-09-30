@@ -145,7 +145,7 @@ public class MainActivity extends Activity implements WearService.WearServiceLis
                 super.onDrawerClosed(drawerView);
             }
         };
-        drawerLayout.setDrawerListener(mDrawerToggle);
+        drawerLayout.addDrawerListener(mDrawerToggle);
 
         bindService(new Intent(this, WearService.class), mConnection, BIND_AUTO_CREATE);
         startService(new Intent(this, WearService.class));
